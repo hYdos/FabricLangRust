@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "quilt_lang_rust",
+  "version": "${version}",
+  "name": "Quilt Language Rust",
+  "description": "Rust Language support for modding",
+  "authors": [
+    "hydos"
+  ],
+  "contact": {
+    "website": "https://why would you even want this.com"
+  },
+  "license": "MIT",
+  "icon": "assets/QuiltLangRust/icon.png",
+  "environment": "*",
+  "languageAdapters": {
+    "rust": "me.hydos.quiltlangrust.RustLangAdapter"
+  },
+  "mixins": [
+    "QuiltLangRust.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.11.3",
+    "minecraft": "1.17-alpha.21.19.a"
+  }
+}

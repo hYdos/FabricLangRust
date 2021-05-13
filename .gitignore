@@ -1,0 +1,12 @@
+/target
+/.idea
+*.iml
+Cargo.lock
+/out
+QuiltMod/.mixin.out
+QuiltMod/build
+QuiltMod/config
+QuiltMod/crash-reports
+QuiltMod/logs
+QuiltMod/natives
+QuiltMod/mods
