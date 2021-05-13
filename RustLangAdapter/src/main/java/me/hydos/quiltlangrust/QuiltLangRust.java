@@ -19,19 +19,27 @@ public class QuiltLangRust {
      */
     public static void tryLoadRust() {
         if (!isLoaded) {
-            Path extractedNativeLoc = new File(NATIVES_DIR, "libQuiltLangRust.so").toPath();
-            Path nativeInJar = FabricLoader.getInstance().getModContainer(MODID).get().getPath("linux-x86-64/libQuiltLangRust.so");
+            Path extractedNativeLoc = new File(NATIVES_DIR, "libQuiltLangRust" + getPlatformSuffix()).toPath();
+            Path nativeInJar = FabricLoader.getInstance().getModContainer(MODID).orElseThrow().getPath(getPlatformFolder() + "libQuiltLangRust" + getPlatformSuffix());
             try {
                 Files.deleteIfExists(extractedNativeLoc);
                 Files.createDirectories(Paths.get(String.valueOf(NATIVES_DIR)));
                 Files.copy(nativeInJar, extractedNativeLoc);
                 System.load(extractedNativeLoc.toAbsolutePath().toString());
             } catch (UnsatisfiedLinkError | IOException e) {
-                System.err.println("Native code library failed to load.");
+                System.err.println("Native library failed to load.");
                 e.printStackTrace();
                 System.exit(-1);
             }
             isLoaded = true;
         }
+    }
+
+    private static String getPlatformFolder() {
+        return "linux-x86-64/";
+    }
+
+    private static String getPlatformSuffix() {
+        return ".so";
     }
 }

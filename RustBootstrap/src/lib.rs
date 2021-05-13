@@ -1,12 +1,23 @@
-//! these 2 impl's are placeholders and will be generated later on.
-mod raw_jni;
+use std::borrow::Borrow;
+use std::ffi::CStr;
 
-struct MinecraftClient {}
+use jni::JNIEnv;
+use jni::objects::{JObject, JString};
+use crate::util::JStringUtils;
 
-struct MinecraftDedicatedServer {}
+mod util;
 
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "system" fn Java_me_hydos_quiltlangrust_entrypoint_RustModInitializer_runNativeInitializer(env: JNIEnv, instance: JObject, libPath: JString, modid: JString) {
+    println!("This was printed in rust. if this works then i am concern. also hi java");
 
-struct Minecraft {}
+    let mut combined_str = modid.into_str(&env);
+    combined_str.push_str(" Sounds like an interesting modid");
+    println!("{}", combined_str);
+    println!("{}", libPath.into_str(&env));
+}
+
 /// This is the way to interact with all things java related (most mods and Minecraft)
 impl Minecraft {
     /// Calls LogManager.getLogger(logger_name).info(message);
