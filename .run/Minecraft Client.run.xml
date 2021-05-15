@@ -2,6 +2,9 @@
   <configuration default="false" name="Minecraft Client" type="Application" factoryName="Application">
     <option name="ALTERNATIVE_JRE_PATH" value="16" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+    <envs>
+      <env name="RUST_BACKTRACE" value="1" />
+    </envs>
     <option name="MAIN_CLASS_NAME" value="net.fabricmc.devlaunchinjector.Main" />
     <module name="RustLangAdapter.main" />
     <option name="VM_PARAMETERS" value="-Dfabric.dli.config=$PROJECT_DIR$/../fabric-language-c/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=client -Dfabric.dli.main=net.fabricmc.loader.launch.knot.KnotClient" />
