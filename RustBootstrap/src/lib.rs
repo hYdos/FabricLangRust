@@ -63,7 +63,7 @@ mod some_jni {
         }
 
         // TODO: actually be able to pass/return object
-        pub extern "java" fn register(&self, env: &'borrow JNIEnv<'env>, ident: Identifier, obj: ()) -> JniResult<()> {}
+        pub extern "java" fn register(&self, env: &'borrow JNIEnv<'env>, ident: Identifier, obj: JObject) -> JniResult<JObject> {}
     }
 
     #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
@@ -158,7 +158,7 @@ mod some_jni {
             let block_settings = BlockSettings::of(env, block_material)?;
             let block = Block::new(env, block_settings)?;
 
-            let obj = block_registry.register(env, block_id, ())?;
+            let obj = block_registry.register(env, block_id, block.raw.as_obj())?;
 
             logger.info(env, "Hello, im printing this from rust!".to_string());
 
