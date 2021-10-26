@@ -4,9 +4,6 @@ use std::borrow::Borrow;
 use std::ffi::CStr;
 use std::ptr::null;
 
-use jni::JNIEnv;
-use jni::objects::{JObject, JString, JValue};
-
 use bridge::*;
 
 use crate::util::JStringUtils;
@@ -17,66 +14,157 @@ mod util;
 mod bridge;
 mod MinecraftClient;
 
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "system" fn Java_me_hydos_quiltlangrust_entrypoint_RustModInitializer_runNativeInitializer(env: JNIEnv, instance: JObject, libPath: JString, modid: JString) {
-    println!("This was printed in rust. if this works then i am concern. also hi java");
+#[robusta_jni::bridge]
+mod some_jni {
+    use robusta_jni::convert::{Signature, IntoJavaValue, FromJavaValue, TryIntoJavaValue, TryFromJavaValue, Field};
+    use robusta_jni::jni::JNIEnv;
+    use robusta_jni::jni::objects::{AutoLocal, JValue};
+    use robusta_jni::jni::errors::Result as JniResult;
+    use robusta_jni::jni::errors::Error as JniError;
+    use robusta_jni::jni::objects::JObject;
+    use crate::bridge::class;
 
-    let mut combined_str = modid.into_str(&env);
-    combined_str.push_str(" Sounds like an interesting modid");
-    println!("{}", combined_str);
-    println!("{}", libPath.into_str(&env));
+    #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
+    #[package(org.apache.logging.log4j)]
+    pub struct LogManager<'env: 'borrow, 'borrow> {
+        #[instance]
+        raw: AutoLocal<'env, 'borrow>
+    }
 
-    let logger = class(env, "org/apache/logging/log4j/LogManager").method(
-        env,
-        "getLogger",
-        "(Ljava/lang/String;)Lorg/apache/logging/log4j/Logger;",
-        &[JValue::Object(JObject::from(jstring(&env, "Logger made in rust")))],
-    );
+    impl<'env: 'borrow, 'borrow> LogManager<'env, 'borrow> {
+        pub extern "java" fn getLogger(env: &'borrow JNIEnv<'env>, name: String) -> JniResult<Logger<'env, 'borrow>> { }
+    }
 
-    let block_registry = class(env, "net.minecraft.util.registry.Registry").field(
-        env,
-        "BLOCK",
-        "Lnet/minecraft/util/registry/DefaultedRegistry;",
-    );
+    #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
+    #[package(org.apache.logging.log4j)]
+    pub struct Logger<'env: 'borrow, 'borrow> {
+        #[instance]
+        raw: AutoLocal<'env, 'borrow>
+    }
 
-    let block_id = class(env, "net.minecraft.util.Identifier").new(
-        env,
-        "(Ljava/lang/String;)V",
-        &[JValue::Object(JObject::from(jstring(&env, "minecraft:corbas")))],
-    );
+    impl<'env: 'borrow, 'borrow> Logger<'env, 'borrow> {
+        pub extern "java" fn info(&self, env: &'borrow JNIEnv<'env>, msg: String) -> JniResult<()> { }
+    }
 
-    let block_material = class(env, "net.minecraft.block.Material").field(
-        env,
-        "PLANT",
-        "Lnet/minecraft/block/Material;",
-    );
+    #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
+    #[package(net.minecraft.util.registry)]
+    pub struct Registry<'env: 'borrow, 'borrow> {
+        #[instance]
+        raw: AutoLocal<'env, 'borrow>
+    }
 
-    let block_settings = class(env, "net/minecraft/block/AbstractBlock$Settings").method(
-        env,
-        "of",
-        "(Lnet/minecraft/block/Material;)Lnet/minecraft/block/AbstractBlock$Settings;",
-        &[JValue::Object(block_material.as_object().get_raw())],
-    );
+    impl<'env: 'borrow, 'borrow> Registry<'env, 'borrow> {
+        fn getBlock(env: &'borrow JNIEnv<'env>) -> JniResult<DefaultedRegistry<'env, 'borrow>> {
+            env.get_static_field(
+                "net/minecraft/util/registry/Registry",
+                "BLOCK",
+                <DefaultedRegistry as Signature>::SIG_TYPE
+            ).and_then(|val| DefaultedRegistry::try_from(val.l()?, env))
+        }
 
-    let block = class(env, "net/minecraft/block/Block").new(
-        env,
-        "(Lnet/minecraft/block/AbstractBlock$Settings;)V",
-        &[JValue::Object(block_settings.as_object().get_raw())],
-    );
+        // TODO: actually be able to pass/return object
+        pub extern "java" fn register(&self, env: &'borrow JNIEnv<'env>, ident: Identifier, obj: ()) -> JniResult<()> {}
+    }
 
-    class(env, "net.minecraft.util.registry.Registry").method(
-        env,
-        "register",
-        "(Lnet/minecraft/util/registry/Registry;Lnet/minecraft/util/Identifier;Ljava/lang/Object;)Ljava/lang/Object;",
-        &[
-            JValue::Object(block_registry.as_object().get_raw()),
-            JValue::Object(block_id.as_object().get_raw()),
-            JValue::Object(block.as_object().get_raw()),
-        ],
-    );
+    #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
+    #[package(net.minecraft.util.registry)]
+    pub struct DefaultedRegistry<'env: 'borrow, 'borrow> {
+        #[instance]
+        raw: AutoLocal<'env, 'borrow>
+    }
 
-    logger.as_object().method(env, "info", "(Ljava/lang/String;)V", &[JValue::Object(JObject::from(jstring(&env, "Hello, im printing this from rust!")))]);
+    #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
+    #[package(net.minecraft.util)]
+    pub struct Identifier<'env: 'borrow, 'borrow> {
+        #[instance]
+        raw: AutoLocal<'env, 'borrow>
+    }
+
+    impl<'env: 'borrow, 'borrow> Identifier<'env, 'borrow> {
+        #[constructor]
+        pub extern "java" fn new(env: &'borrow JNIEnv<'env>, name: String) -> JniResult<Self> {}
+    }
+
+    #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
+    #[package(net.minecraft.block)]
+    pub struct Material<'env: 'borrow, 'borrow> {
+        #[instance]
+        raw: AutoLocal<'env, 'borrow>
+    }
+
+    impl<'env: 'borrow, 'borrow> Material<'env, 'borrow> {
+        fn getPlant(env: &'borrow JNIEnv<'env>) -> JniResult<Material<'env, 'borrow>> {
+            env.get_static_field(
+                "net/minecraft/block/Material",
+                "PLANT",
+                <Material as Signature>::SIG_TYPE
+            ).and_then(|val| Material::try_from(val.l()?, env))
+        }
+    }
+
+    #[derive(TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
+    #[package(net.minecraft.block)]
+    pub struct BlockSettings<'env: 'borrow, 'borrow> {
+        #[instance]
+        raw: AutoLocal<'env, 'borrow>
+    }
+
+    impl<'env: 'borrow, 'borrow> Signature for BlockSettings<'env, 'borrow> {
+        const SIG_TYPE: &'static str = "Lnet/minecraft/block/AbstractBlock$Settings;";
+    }
+    impl<'env: 'borrow, 'borrow> Signature for &BlockSettings<'env, 'borrow> {
+        const SIG_TYPE: &'static str = "Lnet/minecraft/block/AbstractBlock$Settings;";
+    }
+    impl<'env: 'borrow, 'borrow> Signature for &mut BlockSettings<'env, 'borrow> {
+        const SIG_TYPE: &'static str = "Lnet/minecraft/block/AbstractBlock$Settings;";
+    }
+
+    impl<'env: 'borrow, 'borrow> BlockSettings<'env, 'borrow> {
+        pub extern "java" fn of(env: &'borrow JNIEnv<'env>, material: Material) -> JniResult<BlockSettings<'env, 'borrow>> {}
+    }
+
+    #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
+    #[package(net.minecraft.block)]
+    pub struct Block<'env: 'borrow, 'borrow> {
+        #[instance]
+        raw: AutoLocal<'env, 'borrow>
+    }
+
+    impl<'env: 'borrow, 'borrow> Block<'env, 'borrow> {
+        #[constructor]
+        pub extern "java" fn new(env: &'borrow JNIEnv<'env>, settings: BlockSettings) -> JniResult<Self> {}
+    }
+
+    #[derive(Signature, TryIntoJavaValue, IntoJavaValue, TryFromJavaValue)]
+    #[package(me.hydos.quiltlangrust.entrypoint)]
+    pub struct RustModInitializer<'env: 'borrow, 'borrow> {
+        #[instance]
+        raw: AutoLocal<'env, 'borrow>
+    }
+
+    impl<'env: 'borrow, 'borrow> RustModInitializer<'env, 'borrow> {
+        pub extern "jni" fn runNativeInitializer(self, env: &JNIEnv, libPath: String, modid: String) -> JniResult<()> {
+            println!("This was printed in rust. if this works then i am concern. also hi java");
+
+            println!("{} sounds like an interesting modid", modid);
+            println!("{}", libPath);
+
+            let logger = LogManager::getLogger(env, "Logger made in rust".to_string())?;
+            let block_registry = Registry::getBlock(env)?;
+            let block_registry = Registry::try_from( block_registry.raw.as_obj(), env)?;
+
+            let block_id = Identifier::new(env, "minecraft:corbas".to_string())?;
+            let block_material = Material::getPlant(env)?;
+            let block_settings = BlockSettings::of(env, block_material)?;
+            let block = Block::new(env, block_settings)?;
+
+            let obj = block_registry.register(env, block_id, ())?;
+
+            logger.info(env, "Hello, im printing this from rust!".to_string());
+
+            Ok(())
+        }
+    }
 }
 
 /// Called when the java ModInitializer is

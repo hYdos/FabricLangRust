@@ -1,6 +1,8 @@
 use std::borrow::Borrow;
 use std::ffi::CStr;
 
+use robusta_jni::jni;
+
 use jni::JNIEnv;
 use jni::objects::{JObject, JString};
 

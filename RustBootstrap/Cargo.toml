@@ -7,7 +7,10 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-jni = "0.19.0"
+#jni = "0.19.0"
+#robusta_jni = "0.2"
+robusta_jni = { git = "https://github.com/kitlith/robusta", branch = "fix_missing_package" }
+#lazy_static = "1.4.0"
 
 [lib]
 crate_type = ["cdylib"]

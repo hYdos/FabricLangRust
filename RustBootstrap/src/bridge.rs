@@ -1,5 +1,7 @@
 use std::borrow::Borrow;
 
+use robusta_jni::jni;
+
 use jni::JNIEnv;
 use jni::objects::{JClass, JObject, JString, JValue};
 use jni::strings::JNIString;
@@ -17,7 +19,7 @@ pub struct Value<'a> {
 }
 
 impl Class<'a> {
-    pub fn method(&self, env: JNIEnv<'a>, name: &str, signature: &str, args: &[JValue]) -> Value<'a> {
+    pub fn method(&self, env: &JNIEnv<'a>, name: &str, signature: &str, args: &[JValue]) -> Value<'a> {
         let raw_result = env.call_static_method(self.j_class, name, signature, args);
         env.exception_describe();
         Value {
@@ -25,7 +27,7 @@ impl Class<'a> {
         }
     }
 
-    pub fn new(&self, env: JNIEnv<'a>, signature: &str, args: &[JValue]) -> Value<'a> {
+    pub fn new(&self, env: &JNIEnv<'a>, signature: &str, args: &[JValue]) -> Value<'a> {
         let raw_result = env.new_object(self.j_class, signature, args);
         env.exception_describe();
         Value {
@@ -33,7 +35,7 @@ impl Class<'a> {
         }
     }
 
-    pub fn field(&self, env: JNIEnv<'a>, name: &str, signature: &str) -> Value<'a> {
+    pub fn field(&self, env: &JNIEnv<'a>, name: &str, signature: &str) -> Value<'a> {
         let raw_result = env.get_static_field(self.j_class, name, signature);
         env.exception_describe();
         Value {
@@ -43,7 +45,7 @@ impl Class<'a> {
 }
 
 impl Object<'a> {
-    pub fn method(&self, env: JNIEnv<'a>, name: &str, signature: &str, args: &[JValue]) -> Value<'a> {
+    pub fn method(&self, env: &JNIEnv<'a>, name: &str, signature: &str, args: &[JValue]) -> Value<'a> {
         let raw_result = env.call_method(self.j_object, name, signature, args);
         env.exception_describe();
         Value {
@@ -69,7 +71,7 @@ pub fn jstring<'a>(env: &'a JNIEnv, string: &'a str) -> JString<'a> {
     env.new_string(string).unwrap()
 }
 
-pub fn class(env: JNIEnv<'a>, class: &str) -> Class<'a> {
+pub fn class(env: &JNIEnv<'a>, class: &str) -> Class<'a> {
     let clean_string = class.replace(".", "/");
     Class {
         j_class: env.find_class(clean_string.as_str()).unwrap(),
